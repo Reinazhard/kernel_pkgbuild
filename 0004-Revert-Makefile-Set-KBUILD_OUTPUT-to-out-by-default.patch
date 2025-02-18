@@ -1,0 +1,34 @@
+From 7668a71668bb3302d2a7ab916fb866d28fa0cd52 Mon Sep 17 00:00:00 2001
+From: "M. \"Harumajati\" Alfarozi" <reinazhard@gmail.com>
+Date: Tue, 18 Feb 2025 13:59:46 +0700
+Subject: [PATCH] Revert "Makefile: Set KBUILD_OUTPUT to out by default"
+
+This reverts commit ea935ff0e3975152105dec3c137efef2469615fa.
+
+diff --git a/.gitignore b/.gitignore
+index c6cdb830b000..56972adb5031 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -177,6 +177,3 @@ sphinx_*/
+ 
+ # Rust analyzer configuration
+ /rust-project.json
+-
+-# Object directory
+-out/
+diff --git a/Makefile b/Makefile
+index 1c227ce15c20..4ae9be264d97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -176,8 +176,6 @@ export KBUILD_EXTRA_WARN
+ # The O= assignment takes precedence over the KBUILD_OUTPUT environment
+ # variable.
+ 
+-KBUILD_OUTPUT := out
+-
+ # Do we want to change the working directory?
+ ifeq ("$(origin O)", "command line")
+   KBUILD_OUTPUT := $(O)
+-- 
+2.48.1
+

@@ -1,10 +1,8 @@
-# Maintainer: Andreas Radke <andyrtr@archlinux.org>
-
-pkgbase=linux-lts
+pkgbase=linux-sultan
 pkgver=6.12.13
 pkgrel=1
-pkgdesc='LTS Linux'
-url='https://www.kernel.org'
+pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
+url='https://github.com/kerneltoast/kernel_x86_laptop'
 arch=(x86_64)
 makedepends=(
   bc
@@ -16,13 +14,6 @@ makedepends=(
   python
   tar
   xz
-
-  # htmldocs
-  graphviz
-  imagemagick
-  python-sphinx
-  python-yaml
-  texlive-latexextra
 )
 options=(
   !debug
@@ -31,34 +22,27 @@ options=(
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
+  'https://github.com/kerneltoast/kernel_x86_laptop/archive/refs/heads/v6.12-sultan.zip'
   0001-ZEN-Add-sysctl-and-CONFIG-to-disallow-unprivileged-C.patch
   0002-Default-to-maximum-amount-of-ASLR-bits.patch
   0003-skip-simpledrm-if-nvidia-drm.modeset\=1-is.patch
-  config  # the main kernel config file
+  0004-Revert-Makefile-Set-KBUILD_OUTPUT-to-out-by-default.patch
 )
-validpgpkeys=(
-  ABAF11C65A2970B130ABE3C479BE3E4300411886  # Linus Torvalds
-  647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
-)
-# https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
-sha256sums=('f3ebdeea9e555b4cface44e29670056f4024541e6bd222fbcf776c818974fbba'
-            'SKIP'
-            '3cf389ced2b40e6457421cb27892bf126b73032fbf1de895ecc37b13d981a17c'
-            '423b2c6fbc8d6df79997550bef1b1e4f6f402b668007d150013623a83a12b49e'
-            '596f8e0aef1df72a84685e8f2b8a9dde7e33b513de555fae6069ba652cbd00c1'
-            'a3d44d98ac548fdbafc11a02b6139e175345438f8003fc6383ce31dce92fa6b4')
-b2sums=('6c1f22d80bd5226a08c5ef80e9ab2ba553d00b49b4795b8ccb227381a7275ec89534267354318fa9b938fe99c4d91f0bf6b1d55263ea57eccc3aea1a9ce1d611'
-        'SKIP'
-        'b2e1f3544470a0ded336a8d9097b879060530d795a9b60ef5d617d16c165f3ca27424529a7c464d249ab72abcaf48d65d66d96508a7b49622ab404739ae0a918'
-        '01f1a8249983b1a52437843ce3566242b3ed1df03fcab98ec092982be9a4dc947ab0f932a6bc9ac84f85248dca479ebe193a6032cfd2b574dc6f5ca31a0190c5'
-        '410dc8911051905c5c01b47890eeff817fc180434372864cfa9ee0d77e0ff43571b9fcc3c193d562c4dcd49511edf7c6c01dde12dd0778845d1868dc435531ea'
-        '0e534788a7445e28128b46e797945c7dd1e9d4c673e25156e517c9b7ce1122a749b08e0a74204970af8197266e7076100e12c019c0c4b451862db96f6c3f6981')
+
+# Linux CachyOS NVIDIA build conf
+_patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/6.12"
+_nv_ver=570.86.16
+_nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
+source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
+             "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch")
+
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
 
 prepare() {
+  rm -rf $_srcname
+  mv kernel_x86_laptop-6.12-sultan $_srcname
   cd $_srcname
 
   echo "Setting version..."
@@ -68,6 +52,8 @@ prepare() {
   local src
   for src in "${source[@]}"; do
     src="${src%%::*}"
+    # Skip nvidia patches
+    [[ "$src" == "${_patchsource}"/misc/nvidia/*.patch ]] && continue
     src="${src##*/}"
     src="${src%.zst}"
     [[ $src = *.patch ]] || continue
@@ -76,22 +62,38 @@ prepare() {
   done
 
   echo "Setting config..."
-  cp ../config .config
-  make olddefconfig
-  diff -u ../config .config || :
+#  cp ../config .config
+  make archlinux_defconfig -j4
+#  diff -u ../config .config || :
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
+
+  echo "Configuring Nvidia Modules..."
+  cd "${srcdir}"
+  rm -rf "${_nv_pkg}"
+  sh "${_nv_pkg}.run" --extract-only
+
+  # Use fbdev and modeset as default
+  patch -Np1 -i "${srcdir}/0001-Make-modeset-and-fbdev-default-enabled.patch" -d "${srcdir}/${_nv_pkg}/kernel"
+
 }
 
 build() {
   cd $_srcname
 
-  make htmldocs &
-  local pid_docs=$!
-  make all
-  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  wait "${pid_docs}"
+  make all -j4
+# Sultan disabled the DEBUG_INFO_BTF_MODULES
+#  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
+  local MODULE_FLAGS=(
+      KERNEL_UNAME="${_kernuname}"
+      IGNORE_PREEMPT_RT_PRESENCE=1
+      SYSSRC="${srcdir}/${_srcname}"
+      SYSOUT="${srcdir}/${_srcname}"
+  )
+  MODULE_FLAGS+=(NV_EXCLUDE_BUILD_MODULES='__EXCLUDE_MODULES')
+  cd "${srcdir}/${_nv_pkg}/kernel"
+  make "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
 }
 
 _package() {
@@ -171,7 +173,7 @@ _package() {
   echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
 
   echo "Installing modules..."
-  ZSTD_CLEVEL=19 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
+  LZ4_CLEVEL=12 make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 \
     DEPMOD=/doesnt/exist modules_install  # Suppress depmod
 
   # remove build link
@@ -244,7 +246,8 @@ _package-headers() {
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux tools/bpf/bpftool/vmlinux.h
+    localversion.* version vmlinux
+# tools/bpf/bpftool/vmlinux.h
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/x86" -m644 arch/x86/Makefile
   cp -t "$builddir" -a scripts
@@ -254,7 +257,7 @@ _package-headers() {
   install -Dt "$builddir/tools/objtool" tools/objtool/objtool
 
   # required when DEBUG_INFO_BTF_MODULES is enabled
-  install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
+  # install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
 
   echo "Installing headers..."
   cp -t "$builddir" -a include
@@ -323,56 +326,29 @@ _package-headers() {
   install -vDm 644 LICENSES/exceptions/* -t "$pkgdir/usr/share/licenses/$pkgname/"
 }
 
-_package-docs() {
-  pkgdesc="Documentation for the $pkgdesc kernel"
-  license=(
-    BSD-3-Clause
+_package-nvidia(){
+    pkgdesc="nvidia module of ${_nv_ver} driver for the ${pkgbase} kernel"
+    depends=("$pkgbase=$_kernver" "nvidia-utils=${_nv_ver}" "libglvnd")
+    provides=('NVIDIA-MODULE')
+    conflicts=("$pkgbase-nvidia-open")
+    license=('custom')
 
-    GFDL-1.1-no-invariants-or-later
+    cd "$_srcname"
+    local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
 
-    GPL-2.0-only
-    'GPL-2.0-only OR BSD-2-Clause'
-    'GPL-2.0-only OR BSD-3-Clause'
-    'GPL-2.0-only OR GFDL-1.1-no-invariants-or-later'
-    'GPL-2.0-only OR GFDL-1.2-no-invariants-only'
-    'GPL-2.0-only OR MIT'
-
-    GPL-2.0-or-later
-    'GPL-2.0-or-later OR BSD-2-Clause'
-    'GPL-2.0-or-later OR CC-BY-4.0'
-    'GPL-2.0-or-later OR MIT'
-    'GPL-2.0-or-later OR X11'
-
-    'LGPL-2.1-only OR BSD-2-Clause'
-
-    MIT
-  )
-
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
-
-  echo "Installing documentation..."
-  local src dst
-  while read -rd '' src; do
-    dst="${src#Documentation/}"
-    dst="$builddir/Documentation/${dst#output/}"
-    install -Dm644 "$src" "$dst"
-  done < <(find Documentation -name '.*' -prune -o ! -type d -print0)
-
-  echo "Adding symlink..."
-  mkdir -p "$pkgdir/usr/share/doc"
-  ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
-
-  # licenses
-  install -vDm 644 LICENSES/deprecated/X11 -t "$pkgdir/usr/share/licenses/$pkgname/"
-  install -vDm 644 LICENSES/preferred/{BSD*,MIT} -t "$pkgdir/usr/share/licenses/$pkgname/"
+    cd "${srcdir}/${_nv_pkg}"
+    install -dm755 "${modulesdir}"
+    install -m644 kernel/*.ko "${modulesdir}"
+    install -Dt "$pkgdir/usr/share/licenses/${pkgname}" -m644 LICENSE
+    find "$pkgdir" -name '*.ko' -exec lz4 -m --rm -12 -T0 {} +
 }
 
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-docs"
+  "$pkgbase-nvidia"
 )
+
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
     $(declare -f "_package${_p#$pkgbase}")
