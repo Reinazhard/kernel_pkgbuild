@@ -1,34 +1,21 @@
 pkgbase=linux-sultan
-pkgver=6.12.13
+pkgver=6.12.15
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
 url='https://github.com/kerneltoast/kernel_x86_laptop'
+license=('GPL-2.0-only')
 arch=(x86_64)
-makedepends=(
-  bc
-  cpio
-  gettext
-  libelf
-  pahole
-  perl
-  python
-  tar
-  xz
-)
-options=(
-  !debug
-  !strip
-)
+makedepends=('bc' 'cpio' 'gettext' 'libelf' 'pahole' 'perl' 'python' 'tar' 'xz')
+options=(!debug !strip)
+
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  'https://github.com/kerneltoast/kernel_x86_laptop/archive/refs/heads/v6.12-sultan.zip'
+  'https://github.com/Reinazhard/kernel_x86_laptop/archive/refs/heads/v6.12-sultan.zip'
   0001-ZEN-Add-sysctl-and-CONFIG-to-disallow-unprivileged-C.patch
   0002-Default-to-maximum-amount-of-ASLR-bits.patch
   0003-skip-simpledrm-if-nvidia-drm.modeset\=1-is.patch
-  0004-Revert-Makefile-Set-KBUILD_OUTPUT-to-out-by-default.patch
 )
-
 # Linux CachyOS NVIDIA build conf
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/6.12"
@@ -63,9 +50,7 @@ prepare() {
   done
 
   echo "Setting config..."
-#  cp ../config .config
   make archlinux_defconfig -j4
-#  diff -u ../config .config || :
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
@@ -84,8 +69,6 @@ build() {
   cd $_srcname
 
   make all -j4
-# Sultan disabled the DEBUG_INFO_BTF_MODULES
-#  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
   local MODULE_FLAGS=(
       IGNORE_PREEMPT_RT_PRESENCE=1
       SYSSRC="${srcdir}/${_srcname}"
@@ -98,68 +81,14 @@ build() {
 
 _package() {
   pkgdesc="The $pkgdesc kernel and modules"
-  license=(
-    'Apache-2.0 OR MIT'
-
-    'BSD-2-Clause OR GPL-2.0-or-later'
-
-    BSD-3-Clause
-    'BSD-3-Clause OR GPL-2.0-only'
-    'BSD-3-Clause OR GPL-2.0-or-later'
-    BSD-3-Clause-Clear
-
-    GPL-1.0-or-later
-    'GPL-1.0-or-later OR BSD-3-Clause'
-
-    GPL-2.0-only
-    'GPL-2.0-only OR Apache-2.0'
-    'GPL-2.0-only OR BSD-2-Clause'
-    'GPL-2.0-only OR BSD-3-Clause'
-    'GPL-2.0-only OR CDDL-1.0'
-    'GPL-2.0-only OR Linux-OpenIB'
-    'GPL-2.0-only OR MIT'
-    'GPL-2.0-only OR MPL-1.1'
-    'GPL-2.0-only OR X11'
-    'GPL-2.0-only WITH Linux-syscall-note'
-
-    GPL-2.0-or-later
-    'GPL-2.0-or-later OR BSD-2-Clause'
-    'GPL-2.0-or-later OR BSD-3-Clause'
-    'GPL-2.0-or-later OR MIT'
-    'GPL-2.0-or-later OR X11'
-    'GPL-2.0-or-later WITH GCC-exception-2.0'
-
-    ISC
-
-    LGPL-2.0-or-later
-    'LGPL-2.1-only'
-    'LGPL-2.1-only OR BSD-2-Clause'
-
-    LGPL-2.1-or-later
-
-    MIT
-    MPL-1.1
-    X11
-    Zlib
-  )
-  depends=(
-    coreutils
-    initramfs
-    kmod
-  )
+  depends=('coreutils' 'initramfs' 'kmod')
   optdepends=(
     'wireless-regdb: to set the correct wireless channels of your country'
     'linux-firmware: firmware images needed for some devices'
     'scx-scheds: to use sched-ext schedulers'
   )
-  provides=(
-    KSMBD-MODULE
-    VIRTUALBOX-GUEST-MODULES
-    WIREGUARD-MODULE
-  )
-  replaces=(
-    wireguard-lts
-  )
+  provides=('KSMBD-MODULE' 'VIRTUALBOX-GUEST-MODULES' 'WIREGUARD-MODULE')
+  replaces=(wireguard-lts)
 
   cd $_srcname
   local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
@@ -187,58 +116,6 @@ _package() {
 
 _package-headers() {
   pkgdesc="Headers and scripts for building modules for the $pkgdesc kernel"
-  license=(
-    BSD-3-Clause
-    'BSD-3-Clause OR GPL-2.0-only'
-
-    GPL-1.0-or-later
-    'GPL-1.0-or-later WITH Linux-syscall-note'
-
-    GPL-2.0-only
-    'GPL-2.0-only OR Apache-2.0'
-    'GPL-2.0-only OR BSD-2-Clause'
-    'GPL-2.0-only OR BSD-3-Clause'
-    'GPL-2.0-only OR CDDL-1.0'
-    'GPL-2.0-only OR Linux-OpenIB'
-    'GPL-2.0-only OR Linux-OpenIB OR BSD-2-Clause'
-    'GPL-2.0-only OR MIT'
-    'GPL-2.0-only OR MPL-1.1'
-    'GPL-2.0-only OR X11'
-    'GPL-2.0-only WITH Linux-syscall-note'
-    '(GPL-2.0-only WITH Linux-syscall-note) AND MIT'
-    '(GPL-2.0-only WITH Linux-syscall-note) OR BSD-2-Clause'
-    '(GPL-2.0-only WITH Linux-syscall-note) OR BSD-3-Clause'
-    '(GPL-2.0-only WITH Linux-syscall-note) OR CDDL-1.0'
-    '(GPL-2.0-only WITH Linux-syscall-note) OR Linux-OpenIB'
-    '(GPL-2.0-only WITH Linux-syscall-note) OR MIT'
-
-    GPL-2.0-or-later
-    'GPL-2.0-or-later OR BSD-2-Clause'
-    'GPL-2.0-or-later OR BSD-3-Clause'
-    'GPL-2.0-or-later OR MIT'
-    'GPL-2.0-or-later WITH Linux-syscall-note'
-    '(GPL-2.0-or-later WITH Linux-syscall-note) OR BSD-3-Clause'
-    '(GPL-2.0-or-later WITH Linux-syscall-note) OR MIT'
-    'LGPL-2.0-or-later OR BSD-2-Clause'
-    'LGPL-2.0-or-later WITH Linux-syscall-note'
-
-    ISC
-
-    'LGPL-2.0-or-later WITH Linux-syscall-note'
-    'LGPL-2.0-or-later OR BSD-2-Clause'
-
-    LGPL-2.1-only
-    'LGPL-2.1-only OR BSD-2-Clause'
-    'LGPL-2.1-only OR MIT'
-    'LGPL-2.1-only WITH Linux-syscall-note'
-
-    LGPL-2.1-or-later
-    'LGPL-2.1-or-later OR BSD-2-Clause'
-    'LGPL-2.1-or-later WITH Linux-syscall-note'
-
-    MIT
-    Zlib
-  )
   depends=(pahole)
 
   cd $_srcname
@@ -247,7 +124,6 @@ _package-headers() {
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
     localversion.* version vmlinux
-# tools/bpf/bpftool/vmlinux.h
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/x86" -m644 arch/x86/Makefile
   cp -t "$builddir" -a scripts
@@ -255,9 +131,6 @@ _package-headers() {
 
   # required when STACK_VALIDATION is enabled
   install -Dt "$builddir/tools/objtool" tools/objtool/objtool
-
-  # required when DEBUG_INFO_BTF_MODULES is enabled
-  # install -Dt "$builddir/tools/bpf/resolve_btfids" tools/bpf/resolve_btfids/resolve_btfids
 
   echo "Installing headers..."
   cp -t "$builddir" -a include
@@ -354,5 +227,3 @@ for _p in "${pkgname[@]}"; do
     _package${_p#$pkgbase}
   }"
 done
-
-# vim:set ts=8 sts=2 sw=2 et:
