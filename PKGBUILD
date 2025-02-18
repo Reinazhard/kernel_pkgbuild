@@ -30,6 +30,7 @@ source=(
 )
 
 # Linux CachyOS NVIDIA build conf
+_kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/6.12"
 _nv_ver=570.86.16
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
@@ -86,7 +87,6 @@ build() {
 # Sultan disabled the DEBUG_INFO_BTF_MODULES
 #  make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
   local MODULE_FLAGS=(
-      KERNEL_UNAME="${_kernuname}"
       IGNORE_PREEMPT_RT_PRESENCE=1
       SYSSRC="${srcdir}/${_srcname}"
       SYSOUT="${srcdir}/${_srcname}"
