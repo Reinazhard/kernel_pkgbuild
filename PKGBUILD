@@ -5,7 +5,7 @@ pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
 url='https://github.com/kerneltoast/kernel_x86_laptop'
 license=('GPL-2.0-only')
 arch=(x86_64)
-makedepends=('bc' 'cpio' 'gettext' 'libelf' 'pahole' 'perl' 'python' 'tar' 'xz')
+makedepends=('bc' 'cpio' 'gettext' 'libelf' 'pahole' 'perl' 'python' 'tar' 'xz' 'clang' 'llvm' 'lld')
 options=(!debug !strip)
 
 _srcname=linux-$pkgver
@@ -16,17 +16,30 @@ source=(
   0002-Default-to-maximum-amount-of-ASLR-bits.patch
   0003-skip-simpledrm-if-nvidia-drm.modeset\=1-is.patch
 )
-# Linux CachyOS NVIDIA build conf
+
+# Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/6.12"
 _nv_ver=570.86.16
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
-             "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch")
+         "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch"
+         "${_patchsource}/misc/0001-clang-polly.patch"
+         "${_patchsource}/misc/0001-acpi-call.patch"
+         "${_patchsource}/misc/0001-preempt-lazy.patch"
+         "${_patchsource}/misc/dkms-clang.patch")
 
 export KBUILD_BUILD_HOST=archlinux
-export KBUILD_BUILD_USER=$pkgbase
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
+
+BUILD_FLAGS=(
+    CC=clang
+    LD=ld.lld
+    LLVM=1
+    LLVM_IAS=1
+    AR=llvm-ar
+    NM=llvm-nm
+)
 
 prepare() {
   rm -rf $_srcname
@@ -50,10 +63,25 @@ prepare() {
   done
 
   echo "Setting config..."
-  make archlinux_defconfig -j4
+  make archlinux_defconfig -j4 "${BUILD_FLAGS[@]}"
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
+
+  echo "Setting performance governor..."
+  scripts/config -d CPU_FREQ_DEFAULT_GOV_SCHEDUTIL \
+      -e CPU_FREQ_DEFAULT_GOV_PERFORMANCE
+
+  echo "Enabling KBUILD_CFLAGS -O3..."
+  scripts/config -d CC_OPTIMIZE_FOR_PERFORMANCE \
+      -e CC_OPTIMIZE_FOR_PERFORMANCE_O3
+
+  echo "Selecting lazy preempt type..."
+  scripts/config -e PREEMPT_DYNAMIC -d PREEMPT -d PREEMPT_VOLUNTARY \
+      -e PREEMPT_LAZY -d PREEMPT_NONE
+
+  echo "Selecting thin LLVM level..."
+  scripts/config -e LTO_CLANG_THIN
 
   echo "Configuring Nvidia Modules..."
   cd "${srcdir}"
@@ -68,15 +96,14 @@ prepare() {
 build() {
   cd $_srcname
 
-  make all -j4
+  make all -j4 "${BUILD_FLAGS[@]}"
   local MODULE_FLAGS=(
-      IGNORE_PREEMPT_RT_PRESENCE=1
       SYSSRC="${srcdir}/${_srcname}"
       SYSOUT="${srcdir}/${_srcname}"
   )
   MODULE_FLAGS+=(NV_EXCLUDE_BUILD_MODULES='__EXCLUDE_MODULES')
   cd "${srcdir}/${_nv_pkg}/kernel"
-  make "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
+  make "${BUILD_FLAGS[@]}" "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
 }
 
 _package() {
