@@ -1,5 +1,7 @@
 pkgbase=linux-sultan
-pkgver=6.12.15
+_major=6.13
+_minor=7
+pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
 url='https://github.com/kerneltoast/kernel_x86_laptop'
@@ -11,23 +13,34 @@ options=(!debug !strip)
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  'https://github.com/Reinazhard/kernel_x86_laptop/archive/refs/heads/v6.12-sultan.zip'
-  0001-ZEN-Add-sysctl-and-CONFIG-to-disallow-unprivileged-C.patch
-  0002-Default-to-maximum-amount-of-ASLR-bits.patch
-  0003-skip-simpledrm-if-nvidia-drm.modeset\=1-is.patch
+  "https://github.com/Reinazhard/kernel_x86_laptop/archive/refs/heads/v${_major}-sultan.zip"
+  auto-cpu-optimization.sh
 )
 
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
-_patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/6.12"
-_nv_ver=570.86.16
+_patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
+_nv_ver=570.133.07
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch"
          "${_patchsource}/misc/0001-clang-polly.patch"
          "${_patchsource}/misc/0001-acpi-call.patch"
-         "${_patchsource}/misc/0001-preempt-lazy.patch"
-         "${_patchsource}/misc/dkms-clang.patch")
+         "${_patchsource}/misc/dkms-clang.patch"
+#	 "${_patchsource}/0001-amd-pstate.patch"
+#	 "${_patchsource}/0002-amd-tlb-broadcast.patch"
+	 "${_patchsource}/0003-bbr3.patch"
+	 "${_patchsource}/0004-cachy.patch"
+         "${_patchsource}/sched/0001-bore-cachy.patch"
+	 "${_patchsource}/0005-crypto.patch"
+	 "${_patchsource}/0006-fixes.patch"
+#	 "${_patchsource}/0007-itmt-core-ranking.patch"
+	 "${_patchsource}/0008-ntsync.patch"
+	 "${_patchsource}/0009-perf-per-core.patch"
+	 "${_patchsource}/0010-pksm.patch"
+	 "${_patchsource}/0011-t2.patch"
+#	 "${_patchsource}/0012-zstd.patch"
+	 )
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
@@ -43,7 +56,7 @@ BUILD_FLAGS=(
 
 prepare() {
   rm -rf $_srcname
-  mv kernel_x86_laptop-6.12-sultan $_srcname
+  mv kernel_x86_laptop-${_major}-sultan $_srcname
   cd $_srcname
 
   echo "Setting version..."
@@ -82,6 +95,12 @@ prepare() {
 
   echo "Selecting thin LLVM level..."
   scripts/config -e LTO_CLANG_THIN
+
+  echo "Selecting madvise TRANSPARENT_HUGEPAGE config..."
+  scripts/config -d TRANSPARENT_HUGEPAGE_ALWAYS -e TRANSPARENT_HUGEPAGE_MADVISE
+
+  echo "Optimizing CPU automatically..."
+  "${srcdir}"/auto-cpu-optimization.sh
 
   echo "Configuring Nvidia Modules..."
   cd "${srcdir}"
