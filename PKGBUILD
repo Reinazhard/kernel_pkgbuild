@@ -1,6 +1,6 @@
 pkgbase=linux-sultan
-_major=6.13
-_minor=7
+_major=6.14
+_minor=0
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
@@ -23,23 +23,15 @@ _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${
 _nv_ver=570.133.07
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
-         "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch"
+         "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
          "${_patchsource}/misc/0001-clang-polly.patch"
          "${_patchsource}/misc/0001-acpi-call.patch"
          "${_patchsource}/misc/dkms-clang.patch"
-#	 "${_patchsource}/0001-amd-pstate.patch"
-#	 "${_patchsource}/0002-amd-tlb-broadcast.patch"
-	 "${_patchsource}/0003-bbr3.patch"
-	 "${_patchsource}/0004-cachy.patch"
-         "${_patchsource}/sched/0001-bore-cachy.patch"
-	 "${_patchsource}/0005-crypto.patch"
-	 "${_patchsource}/0006-fixes.patch"
-#	 "${_patchsource}/0007-itmt-core-ranking.patch"
-	 "${_patchsource}/0008-ntsync.patch"
-	 "${_patchsource}/0009-perf-per-core.patch"
-	 "${_patchsource}/0010-pksm.patch"
-	 "${_patchsource}/0011-t2.patch"
-#	 "${_patchsource}/0012-zstd.patch"
+	 "${_patchsource}/0004-bbr3.patch"
+	 "${_patchsource}/0005-cachy.patch"
+	 "${_patchsource}/0006-crypto.patch"
+	 "${_patchsource}/0007-fixes.patch"
+	 "${_patchsource}/0008-mm.patch"
 	 )
 
 export KBUILD_BUILD_HOST=archlinux
@@ -108,7 +100,7 @@ prepare() {
   sh "${_nv_pkg}.run" --extract-only
 
   # Use fbdev and modeset as default
-  patch -Np1 -i "${srcdir}/0001-Make-modeset-and-fbdev-default-enabled.patch" -d "${srcdir}/${_nv_pkg}/kernel"
+  patch -Np1 -i "${srcdir}/0001-Enable-atomic-kernel-modesetting-by-default.patch" -d "${srcdir}/${_nv_pkg}/kernel"
 
 }
 
