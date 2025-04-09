@@ -1,0 +1,10 @@
+default:
+  image: "archlinux:base-devel"
+
+build_kernel:
+  stage: build
+  before_script:
+    - mv makepkgnoroot /usr/bin/makepkg
+    - pacman -Syu --noconfirm bc cpio gettext libelf pahole perl python tar xz clang llvm lld
+  script:
+    - makepkg -s --noconfirm --skipinteg
