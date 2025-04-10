@@ -66,7 +66,7 @@ prepare() {
   done
 
   echo "Setting config..."
-  make archlinux_defconfig -j4 "${BUILD_FLAGS[@]}"
+  make archlinux_defconfig -j$(nproc --all) "${BUILD_FLAGS[@]}"
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
@@ -102,7 +102,7 @@ prepare() {
 build() {
   cd $_srcname
 
-  make all -j4 "${BUILD_FLAGS[@]}"
+  make all -j$(nproc --all) "${BUILD_FLAGS[@]}"
   local MODULE_FLAGS=(
       SYSSRC="${srcdir}/${_srcname}"
       SYSOUT="${srcdir}/${_srcname}"
