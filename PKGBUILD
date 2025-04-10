@@ -14,7 +14,6 @@ _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
   "https://github.com/Reinazhard/kernel_x86_laptop/archive/refs/heads/v${_major}-sultan.zip"
-  auto-cpu-optimization.sh
 )
 
 # Linux CachyOS additions
@@ -80,18 +79,15 @@ prepare() {
   scripts/config -d CC_OPTIMIZE_FOR_PERFORMANCE \
       -e CC_OPTIMIZE_FOR_PERFORMANCE_O3
 
-  echo "Selecting lazy preempt type..."
-  scripts/config -e PREEMPT_DYNAMIC -d PREEMPT -d PREEMPT_VOLUNTARY \
-      -e PREEMPT_LAZY -d PREEMPT_NONE
-
   echo "Selecting thin LLVM level..."
   scripts/config -e LTO_CLANG_THIN
 
   echo "Selecting madvise TRANSPARENT_HUGEPAGE config..."
   scripts/config -d TRANSPARENT_HUGEPAGE_ALWAYS -e TRANSPARENT_HUGEPAGE_MADVISE
 
-  echo "Optimizing CPU automatically..."
-  "${srcdir}"/auto-cpu-optimization.sh
+  echo "Optimizing CPU for SKYLAKE..."
+  scripts/config -k --disable CONFIG_GENERIC_CPU
+  scripts/config -k --enable CONFIG_MSKYLAKE
 
   echo "Configuring Nvidia Modules..."
   cd "${srcdir}"
