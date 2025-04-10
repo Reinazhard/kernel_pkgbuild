@@ -31,7 +31,6 @@ source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_p
 	 "${_patchsource}/0005-cachy.patch"
 	 "${_patchsource}/0006-crypto.patch"
 	 "${_patchsource}/0007-fixes.patch"
-	 "${_patchsource}/0008-mm.patch"
 	 )
 
 export KBUILD_BUILD_HOST=archlinux
