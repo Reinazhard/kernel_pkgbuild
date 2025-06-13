@@ -19,7 +19,7 @@ source=(
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=570.153.02
+_nv_ver=575.57.08
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
@@ -70,17 +70,6 @@ prepare() {
 
   echo "Enabling CachyOS config..."
   scripts/config -e CACHY
-
-  echo "Setting performance governor..."
-  scripts/config -d CPU_FREQ_DEFAULT_GOV_SCHEDUTIL \
-      -e CPU_FREQ_DEFAULT_GOV_PERFORMANCE
-
-  echo "Enabling KBUILD_CFLAGS -O3..."
-  scripts/config -d CC_OPTIMIZE_FOR_PERFORMANCE \
-      -e CC_OPTIMIZE_FOR_PERFORMANCE_O3
-
-  echo "Selecting madvise TRANSPARENT_HUGEPAGE config..."
-  scripts/config -d TRANSPARENT_HUGEPAGE_ALWAYS -e TRANSPARENT_HUGEPAGE_MADVISE
 
   echo "Optimizing NATIVE CPU..."
   scripts/config -d GENERIC_CPU -d MZEN4 -e X86_NATIVE_CPU
