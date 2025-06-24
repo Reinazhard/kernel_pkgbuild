@@ -19,7 +19,7 @@ source=(
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=575.57.08
+_nv_ver=575.64
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
