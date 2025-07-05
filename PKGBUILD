@@ -1,6 +1,6 @@
 pkgbase=linux-sultan
-_major=6.15
-_minor=2
+_major=6.12
+_minor=35
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
@@ -19,20 +19,15 @@ source=(
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=575.64
+_nv_ver=575.64.03
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
-         "${_patchsource}/misc/nvidia/0003-Workaround-nv_vm_flags_-calling-GPL-only-code.patch"
-         "${_patchsource}/misc/0001-acpi-call.patch"
-	 "${_patchsource}/0004-bbr3.patch"
-	 "${_patchsource}/0005-block.patch"
-	 "${_patchsource}/0007-fixes.patch"
 	 )
 
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
 
-BUILD_FLAGS_CLANG=(
+BUILD_FLAGS=(
     CC=clang
     LD=ld.lld
     LLVM=1
@@ -68,12 +63,6 @@ prepare() {
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
 
-  echo "Enabling CachyOS config..."
-  scripts/config -e CACHY
-
-  echo "Optimizing NATIVE CPU..."
-  scripts/config -d GENERIC_CPU -d MZEN4 -e X86_NATIVE_CPU
-
   echo "Configuring Nvidia Modules..."
   cd "${srcdir}"
   rm -rf "${_nv_pkg}"
@@ -81,7 +70,6 @@ prepare() {
 
   # Use fbdev and modeset as default
   patch -Np1 -i "${srcdir}/0001-Enable-atomic-kernel-modesetting-by-default.patch" -d "${srcdir}/${_nv_pkg}/kernel"
-  patch -Np1 -i "${srcdir}/0003-Workaround-nv_vm_flags_-calling-GPL-only-code.patch" -d "${srcdir}/${_nv_pkg}/kernel"
 
 }
 
