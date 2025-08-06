@@ -1,6 +1,6 @@
-pkgbase=linux-sultan
+pkgbase=linux-86hm
 _major=6.12
-_minor=35
+_minor=41
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
@@ -19,7 +19,7 @@ source=(
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=575.64.03
+_nv_ver=575.64.05
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
@@ -62,6 +62,9 @@ prepare() {
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
+
+  echo "God helps us all..."
+  scripts/config -e LTO_CLANG_FULL
 
   echo "Configuring Nvidia Modules..."
   cd "${srcdir}"
