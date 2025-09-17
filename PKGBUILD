@@ -3,8 +3,8 @@ _major=6.12
 _minor=47
 pkgver=${_major}.${_minor}
 pkgrel=1
-pkgdesc='Linux Kernel with rice from Sultan Alsawaf'
-url='https://github.com/kerneltoast/kernel_x86_laptop'
+pkgdesc='Linux Kernel with rice from Sultan Alsawaf (Unofficially maintained)'
+url='https://github.com/Reinazhard/kernel_x86_laptop'
 license=('GPL-2.0-only')
 arch=(x86_64)
 makedepends=('bc' 'cpio' 'gettext' 'libelf' 'pahole' 'perl' 'python' 'tar' 'xz' 'clang' 'llvm' 'lld')
@@ -13,7 +13,7 @@ options=(!debug !strip)
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  "https://github.com/Reinazhard/kernel_x86_laptop/archive/refs/heads/v${_major}-sultan.zip"
+  "${url}/archive/refs/heads/v${_major}-sultan.zip"
 )
 
 # Linux CachyOS additions
