@@ -1,6 +1,6 @@
 pkgbase=linux-86hm
-_major=6.18
-_minor=2
+_major=6.12
+_minor=63
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf (Unofficially maintained)'
@@ -13,7 +13,7 @@ options=(!debug !strip)
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  "${url}/archive/refs/heads/v${_major}-86hm.zip"
+  "${url}/archive/refs/heads/v${_major}-sultan.zip"
 )
 
 # Linux CachyOS additions
@@ -38,7 +38,7 @@ BUILD_FLAGS=(
 
 prepare() {
   rm -rf $_srcname
-  mv kernel_x86_laptop-${_major}-86hm $_srcname
+  mv kernel_x86_laptop-${_major}-sultan $_srcname
   cd $_srcname
 
   echo "Setting version..."
