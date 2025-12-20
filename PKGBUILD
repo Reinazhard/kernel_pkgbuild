@@ -1,6 +1,6 @@
 pkgbase=linux-86hm
-_major=6.12
-_minor=57
+_major=6.18
+_minor=2
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf (Unofficially maintained)'
@@ -13,13 +13,13 @@ options=(!debug !strip)
 _srcname=linux-$pkgver
 _srctag=v$pkgver
 source=(
-  "${url}/archive/refs/heads/v${_major}-sultan.zip"
+  "${url}/archive/refs/heads/v${_major}-86hm.zip"
 )
 
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=580.105.08
+_nv_ver=580.119.02
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
@@ -38,7 +38,7 @@ BUILD_FLAGS=(
 
 prepare() {
   rm -rf $_srcname
-  mv kernel_x86_laptop-${_major}-sultan $_srcname
+  mv kernel_x86_laptop-${_major}-86hm $_srcname
   cd $_srcname
 
   echo "Setting version..."
@@ -73,7 +73,6 @@ prepare() {
 
   # Use fbdev and modeset as default
   patch -Np1 -i "${srcdir}/0001-Enable-atomic-kernel-modesetting-by-default.patch" -d "${srcdir}/${_nv_pkg}/kernel"
-
 }
 
 build() {
@@ -211,7 +210,7 @@ _package-headers() {
 
 _package-nvidia(){
     pkgdesc="nvidia module of ${_nv_ver} driver for the ${pkgbase} kernel"
-    depends=("$pkgbase=$_kernver" "nvidia-utils=${_nv_ver}" "libglvnd")
+    depends=("$pkgbase=$_kernver" "nvidia-580xx-utils=${_nv_ver}" "libglvnd")
     provides=('NVIDIA-MODULE')
     conflicts=("$pkgbase-nvidia-open")
     license=('custom')
