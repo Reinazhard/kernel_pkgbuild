@@ -1,6 +1,6 @@
 pkgbase=linux-86hm
 _major=6.12
-_minor=66
+_minor=77
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf (Unofficially maintained)'
@@ -19,7 +19,7 @@ source=(
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=580.126.09
+_nv_ver=580.142
 _nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
 source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
          "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
