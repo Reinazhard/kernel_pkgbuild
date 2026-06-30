@@ -1,0 +1,47 @@
+name: Build Arch Linux Kernel
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm base-devel git sudo
+
+      - name: Setup build user
+        run: |
+          # Create builduser
+          useradd -m builduser
+          
+          # Allow builduser to run sudo commands without password (required for makepkg -s)
+          echo "builduser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          
+          # Fix permissions for the workspace
+          chown -R builduser:builduser $GITHUB_WORKSPACE
+          
+          # Add safe directory for git
+          su - builduser -c "git config --global --add safe.directory $GITHUB_WORKSPACE"
+
+      - name: Build package with makepkg
+        run: |
+          su - builduser -c "cd $GITHUB_WORKSPACE && MAKEFLAGS=\"-j\$(nproc)\" makepkg -s --noconfirm"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-packages
+          path: |
+            *.pkg.tar.zst
