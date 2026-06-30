@@ -1,6 +1,6 @@
 pkgbase=linux-86hm
 _major=6.12
-_minor=77
+_minor=93
 pkgver=${_major}.${_minor}
 pkgrel=1
 pkgdesc='Linux Kernel with rice from Sultan Alsawaf (Unofficially maintained)'
@@ -18,23 +18,19 @@ source=(
 
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
-_patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=580.142
-_nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
-source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
-         "${_patchsource}/misc/nvidia/0001-Enable-atomic-kernel-modesetting-by-default.patch"
-	 )
 
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
 
-BUILD_FLAGS=(
-    CC=clang
-    LD=ld.lld
-    LLVM=1
-    LLVM_IAS=1
-    AR=llvm-ar
-    NM=llvm-nm
-)
+#BUILD_FLAGS=(
+#    CC=clang
+#    LD=ld.lld
+#    LLVM=1
+#    LLVM_IAS=1
+#    AR=llvm-ar
+#    NM=llvm-nm
+#)
+
+BUILD_FLAGS=()
 
 prepare() {
   rm -rf $_srcname
@@ -48,8 +44,6 @@ prepare() {
   local src
   for src in "${source[@]}"; do
     src="${src%%::*}"
-    # Skip nvidia patches
-    [[ "$src" == "${_patchsource}"/misc/nvidia/*.patch ]] && continue
     src="${src##*/}"
     src="${src%.zst}"
     [[ $src = *.patch ]] || continue
@@ -65,27 +59,12 @@ prepare() {
 
   echo "God helps us all..."
   scripts/config -e LTO_CLANG_FULL
-
-  echo "Configuring Nvidia Modules..."
-  cd "${srcdir}"
-  rm -rf "${_nv_pkg}"
-  sh "${_nv_pkg}.run" --extract-only
-
-  # Use fbdev and modeset as default
-  patch -Np1 -i "${srcdir}/0001-Enable-atomic-kernel-modesetting-by-default.patch" -d "${srcdir}/${_nv_pkg}/kernel"
 }
 
 build() {
   cd $_srcname
 
   make all -j$(nproc --all) "${BUILD_FLAGS[@]}"
-  local MODULE_FLAGS=(
-      SYSSRC="${srcdir}/${_srcname}"
-      SYSOUT="${srcdir}/${_srcname}"
-  )
-  MODULE_FLAGS+=(NV_EXCLUDE_BUILD_MODULES='__EXCLUDE_MODULES')
-  cd "${srcdir}/${_nv_pkg}/kernel"
-  make "${BUILD_FLAGS[@]}" "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
 }
 
 _package() {
@@ -208,26 +187,9 @@ _package-headers() {
   install -vDm 644 LICENSES/exceptions/* -t "$pkgdir/usr/share/licenses/$pkgname/"
 }
 
-_package-nvidia(){
-    pkgdesc="nvidia module of ${_nv_ver} driver for the ${pkgbase} kernel"
-    depends=("$pkgbase=$_kernver" "nvidia-580xx-utils=${_nv_ver}" "libglvnd")
-    provides=('NVIDIA-MODULE')
-    conflicts=("$pkgbase-nvidia-open")
-    license=('custom')
-
-    cd "$_srcname"
-    local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
-
-    cd "${srcdir}/${_nv_pkg}"
-    install -dm755 "${modulesdir}"
-    install -m644 kernel/*.ko "${modulesdir}"
-    install -Dt "$pkgdir/usr/share/licenses/${pkgname}" -m644 LICENSE
-}
-
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
-  "$pkgbase-nvidia"
 )
 
 for _p in "${pkgname[@]}"; do
