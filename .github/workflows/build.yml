@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: archlinux:latest
+      image: archlinux:base-devel
     
     steps:
       - name: Checkout repository
@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pacman -Syu --noconfirm base-devel git sudo
+          pacman -Syu --noconfirm git
 
       - name: Setup build user
         run: |
