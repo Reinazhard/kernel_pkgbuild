@@ -21,16 +21,12 @@ _kernver="$pkgver-$pkgrel"
 
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
 
-#BUILD_FLAGS=(
-#    CC=clang
-#    LD=ld.lld
-#    LLVM=1
-#    LLVM_IAS=1
-#    AR=llvm-ar
-#    NM=llvm-nm
-#)
+BUILD_FLAGS=(
+    LLVM=1
+    LLVM_IAS=1
+)
 
-BUILD_FLAGS=()
+#BUILD_FLAGS=()
 
 prepare() {
   rm -rf $_srcname
