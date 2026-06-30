@@ -15,6 +15,7 @@ _srctag=v$pkgver
 source=(
   "${url}/archive/refs/heads/v${_major}-sultan.zip"
 )
+sha256sums=('SKIP')
 
 # Linux CachyOS additions
 _kernver="$pkgver-$pkgrel"
